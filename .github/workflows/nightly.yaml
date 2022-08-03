@@ -3,7 +3,7 @@ on: [push]
 name: nightly
 
 jobs:
-  build-windows:
+  build-windows-client:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,13 +13,13 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release
+          args: --release --no-default-features --features client
       - uses: actions/upload-artifact@v2
         with:
-          name: build-windows
+          name: build-windows-client
           path: target\release\trojan-r.exe
 
-  build-linux:
+  build-linux-full:
     strategy:
       matrix:
         target: [x86_64-unknown-linux-musl, armv7-unknown-linux-musleabihf, arm-unknown-linux-musleabihf, aarch64-unknown-linux-musl]
@@ -38,5 +38,49 @@ jobs:
           args: --release --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v2
         with:
-          name: build-${{ matrix.target }}
+          name: build-${{ matrix.target }}-full
+          path: target/${{ matrix.target }}/release/trojan-r
+
+  build-linux-server:
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, armv7-unknown-linux-musleabihf, arm-unknown-linux-musleabihf, aarch64-unknown-linux-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --no-default-features --features server --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.target }}-server
+          path: target/${{ matrix.target }}/release/trojan-r
+
+  build-linux-client:
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, armv7-unknown-linux-musleabihf, arm-unknown-linux-musleabihf, aarch64-unknown-linux-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --no-default-features --features client --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.target }}-client
           path: target/${{ matrix.target }}/release/trojan-r
